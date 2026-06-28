@@ -3,7 +3,6 @@ package goblinbob.mobends.core.bender;
 import com.mojang.logging.LogUtils;
 import goblinbob.mobends.core.configuration.CoreClientConfig;
 import org.slf4j.Logger;
-import goblinbob.mobends.standard.main.ModConfig;
 import net.minecraft.world.entity.LivingEntity;
 
 import java.util.*;
@@ -67,17 +66,11 @@ public class EntityBenderRegistry
     {
         // noinspection unchecked
         return (EntityBender<E>) entityToBenderMap.computeIfAbsent(entity, key -> {
-            // Checking the config blacklist
-            if (ModConfig.shouldKeepEntityAsVanilla(entity))
-                return null;
-
-            // Checking direct registration
             Class<? extends LivingEntity> entityClass = entity.getClass();
             for (EntityBender<?> entityBender : entityClassToBenderMap.values())
                 if (entityBender.entityClass.equals(entityClass))
                     return entityBender;
 
-            // Checking indirect inheritance
             for (EntityBender<?> entityBender : entityClassToBenderMap.values())
                 if (entityBender.entityClass.isInstance(entity))
                     return entityBender;

@@ -8,9 +8,6 @@ import goblinbob.mobends.core.compat.PlayerAnimationLibCompat;
 import goblinbob.mobends.core.data.LivingEntityData;
 import goblinbob.mobends.core.mutators.Mutator;
 import goblinbob.mobends.standard.mutators.BipedMutator;
-import goblinbob.mobends.standard.mutators.SpiderMutator;
-import goblinbob.mobends.standard.mutators.SquidMutator;
-import goblinbob.mobends.standard.mutators.WolfMutator;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
@@ -39,8 +36,6 @@ public class EntityRenderHandler
 
         poseStack.pushPose();
 
-        // Check if PlayerAnimationLib has an active animation for this entity
-        // If so, defer to PlayerAnimationLib and skip MoBends animation
         if (PlayerAnimationLibCompat.hasActiveAnimation(living))
         {
             entityBender.deapplyMutation(renderer, living);
@@ -57,35 +52,16 @@ public class EntityRenderHandler
                 final LivingEntityData<LivingEntity> data =
                     (LivingEntityData<LivingEntity>) mutator.getData(living);
 
-                // Set the mutator in the render context so the mixin can intercept rendering
                 if (rawMutator instanceof BipedMutator<?, ?, ?> bipedMutator)
                 {
                     MoBendsRenderContext.setCurrentBipedMutator(bipedMutator);
-                    // Begin main model render phase - mixin will end it after rendering player model
                     MoBendsRenderContext.beginMainModelRender();
 
-                    // Sync animated poses to vanilla model so layers (armor, held items) can use them
-                    // The mixin now uses inMainModelRender flag to distinguish entity vs layer renders
                     EntityModel<?> model = renderer.getModel();
                     if (model instanceof HumanoidModel<?> humanoidModel)
                     {
                         bipedMutator.syncPosesToVanillaModel(humanoidModel);
                     }
-                }
-                else if (rawMutator instanceof SpiderMutator spiderMutator)
-                {
-                    MoBendsRenderContext.setCurrentSpiderMutator(spiderMutator);
-                    MoBendsRenderContext.beginMainModelRender();
-                }
-                else if (rawMutator instanceof SquidMutator squidMutator)
-                {
-                    MoBendsRenderContext.setCurrentSquidMutator(squidMutator);
-                    MoBendsRenderContext.beginMainModelRender();
-                }
-                else if (rawMutator instanceof WolfMutator wolfMutator)
-                {
-                    MoBendsRenderContext.setCurrentWolfMutator(wolfMutator);
-                    MoBendsRenderContext.beginMainModelRender();
                 }
 
                 entityBender.beforeRender(data, living, pt, poseStack);
@@ -101,7 +77,6 @@ public class EntityRenderHandler
     @SuppressWarnings("unchecked")
     public void afterLivingRender(RenderLivingEvent.Post<? extends LivingEntity, ? extends EntityModel<?>> event)
     {
-        // Always clear the render context after rendering
         MoBendsRenderContext.clear();
 
         final EntityBender<LivingEntity> entityBender = EntityBenderRegistry.instance.getForEntity(event.getEntity());

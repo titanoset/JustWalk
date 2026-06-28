@@ -10,6 +10,7 @@ import goblinbob.mobends.core.env.EnvironmentModule;
 import goblinbob.mobends.core.pack.PackManager;
 import goblinbob.mobends.core.supporters.SupporterContent;
 import net.minecraft.client.Minecraft;
+import goblinbob.mobends.standard.client.event.RenderingEventHandler;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
@@ -65,7 +66,7 @@ public class CoreClient extends Core<CoreClientConfig>
         // Register event handlers
         MinecraftForge.EVENT_BUS.register(new EntityRenderHandler());
         MinecraftForge.EVENT_BUS.register(new DataUpdateHandler());
-        MinecraftForge.EVENT_BUS.register(new KeyboardHandler());
+        MinecraftForge.EVENT_BUS.register(new RenderingEventHandler());
         MinecraftForge.EVENT_BUS.register(new FluxHandler());
         MinecraftForge.EVENT_BUS.register(new WorldJoinHandler());
 

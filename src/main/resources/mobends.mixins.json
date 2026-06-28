@@ -8,10 +8,7 @@
     ],
     "client": [
         "AgeableListModelMixin",
-        "ColorableAgeableListModelMixin",
         "LivingEntityRendererAccessor",
-        "SpiderModelMixin",
-        "SquidModelMixin",
         "armor.ModelPartAccessor",
         "armor.HumanoidArmorLayerAccessor",
         "armor.HumanoidArmorLayerMixin",
