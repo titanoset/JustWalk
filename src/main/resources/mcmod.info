@@ -1,7 +1,7 @@
 [
 {
-  "modid": "mobends",
-  "name": "Mo' Bends",
+  "modid": "justwalk",
+  "name": "JustWalk",
   "description": "If you think that Minecraft characters could be more realistic, instead of steady and rigid animations, this mod is just for you! It makes players seem alive, and adds epic sword animations!",
   "version": "${version}",
   "mcversion": "${mcversion}",

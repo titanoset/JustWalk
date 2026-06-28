@@ -7,22 +7,19 @@ import goblinbob.mobends.core.addon.Addons;
 import goblinbob.mobends.core.animation.keyframe.AnimationLoader;
 import goblinbob.mobends.core.bender.EntityBenderRegistry;
 import goblinbob.mobends.core.data.EntityDatabase;
-import goblinbob.mobends.core.network.NetworkHandler;
 import goblinbob.mobends.core.pack.PackDataProvider;
 import goblinbob.mobends.core.util.GsonResources;
 import goblinbob.mobends.standard.DefaultAddon;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.fml.IExtensionPoint;
+import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.network.NetworkConstants;
 import org.slf4j.Logger;
 
 /**
- * Main entry point for the player-only Mo' Bends build.
+ * Client-only entry point for JustWalk.
  */
 @Mod(ModStatics.MODID)
 public class MoBends
@@ -35,22 +32,16 @@ public class MoBends
     {
         instance = this;
 
-        IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
-        modEventBus.addListener(this::commonSetup);
+        // Allow joining servers that do not have this mod installed.
+        ModLoadingContext.get().registerExtensionPoint(
+                IExtensionPoint.DisplayTest.class,
+                () -> new IExtensionPoint.DisplayTest(
+                        () -> NetworkConstants.IGNORESERVERONLY,
+                        (remoteVersion, isServer) -> true));
 
-        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> modEventBus.addListener(this::clientSetup));
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::clientSetup);
 
-        MinecraftForge.EVENT_BUS.register(this);
-
-        LOGGER.info("Mo' Bends {} initializing...", ModStatics.VERSION);
-    }
-
-    private void commonSetup(final FMLCommonSetupEvent event)
-    {
-        event.enqueueWork(() -> {
-            NetworkHandler.register();
-            LOGGER.info("Mo' Bends network handler registered");
-        });
+        LOGGER.info("JustWalk {} initializing...", ModStatics.VERSION);
     }
 
     private void clientSetup(final FMLClientSetupEvent event)
@@ -61,7 +52,7 @@ public class MoBends
         AddonHelper.registerAddon(ModStatics.MODID, new DefaultAddon());
         Core.getInstance().applyConfigurationToEntityBenders();
 
-        LOGGER.info("Mo' Bends client setup complete");
+        LOGGER.info("JustWalk client setup complete");
     }
 
     public static void refreshSystems()
