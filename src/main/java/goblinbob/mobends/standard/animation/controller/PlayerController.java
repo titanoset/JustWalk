@@ -118,7 +118,7 @@ public class PlayerController implements IAnimationController<PlayerData>
                 layerSneak.clearAnimation();
                 layerTorch.clearAnimation();
             }
-            else if (player.isInWater())
+            else if (player.isInWater() && (player.isSwimming() || data.isUnderwater()))
             {
                 layerBase.playOrContinueBit(bitSwimming, data);
                 layerSneak.clearAnimation();

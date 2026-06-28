@@ -2,6 +2,7 @@ package goblinbob.mobends.standard.mutators;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import goblinbob.mobends.core.client.model.BendsCube;
 import goblinbob.mobends.core.client.model.BendsModelPart;
 import goblinbob.mobends.core.client.model.IModelPart;
 import goblinbob.mobends.core.data.IEntityDataFactory;
@@ -90,6 +91,41 @@ public class PlayerMutator extends BipedMutator<PlayerData, AbstractClientPlayer
     }
 
     /**
+     * Detect slim arms from a vanilla PlayerModel by measuring left arm cube width.
+     */
+    private static boolean detectSlimFromModel(PlayerModel<?> model)
+    {
+        if (model == null || model.leftArm == null)
+        {
+            return false;
+        }
+
+        try
+        {
+            goblinbob.mobends.mixin.armor.ModelPartAccessor accessor =
+                (goblinbob.mobends.mixin.armor.ModelPartAccessor) (Object) model.leftArm;
+            java.util.List<net.minecraft.client.model.geom.ModelPart.Cube> cubes = accessor.mobends$getCubes();
+            if (cubes != null)
+            {
+                for (net.minecraft.client.model.geom.ModelPart.Cube cube : cubes)
+                {
+                    float width = cube.maxX - cube.minX;
+                    if (Math.abs(width - 3.0f) < 0.1f)
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            goblinbob.mobends.standard.main.MoBends.LOG.warn("Failed to detect slim arms via model: {}", e.getMessage());
+        }
+
+        return false;
+    }
+
+    /**
      * Detect slim arms from the PlayerRenderer using multiple approaches.
      */
     private boolean detectSlimArms(PlayerRenderer playerRenderer)
@@ -116,36 +152,12 @@ public class PlayerMutator extends BipedMutator<PlayerData, AbstractClientPlayer
         }
 
         // Approach 2: Check the model's arm dimensions
-        // PlayerModel in slim mode has 3-pixel wide arms, standard has 4-pixel wide
-        try
+        PlayerModel<?> model = playerRenderer.getModel();
+        if (model != null)
         {
-            PlayerModel<?> model = playerRenderer.getModel();
-            if (model != null && model.leftArm != null)
-            {
-                // Use mixin accessor to get cubes (private field)
-                // Cast is valid at runtime because mixin applies ModelPartAccessor interface to ModelPart
-                goblinbob.mobends.mixin.armor.ModelPartAccessor accessor =
-                    (goblinbob.mobends.mixin.armor.ModelPartAccessor)(Object) model.leftArm;
-                java.util.List<net.minecraft.client.model.geom.ModelPart.Cube> cubes = accessor.mobends$getCubes();
-                if (cubes != null)
-                {
-                    for (net.minecraft.client.model.geom.ModelPart.Cube cube : cubes)
-                    {
-                        float width = cube.maxX - cube.minX;
-                        if (Math.abs(width - 3.0f) < 0.1f)
-                        {
-                            goblinbob.mobends.standard.main.MoBends.LOG.debug("Detected slim arms via model cube width: true");
-                            return true;
-                        }
-                    }
-                    goblinbob.mobends.standard.main.MoBends.LOG.debug("Detected slim arms via model cube width: false");
-                    return false;
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            goblinbob.mobends.standard.main.MoBends.LOG.warn("Failed to detect slim arms via model: {}", e.getMessage());
+            boolean fromModel = detectSlimFromModel(model);
+            goblinbob.mobends.standard.main.MoBends.LOG.debug("Detected slim arms via model cube width: {}", fromModel);
+            return fromModel;
         }
 
         // Default to standard (wide) arms
@@ -220,12 +232,84 @@ public class PlayerMutator extends BipedMutator<PlayerData, AbstractClientPlayer
         layerRenderers.remove(layerPlayerAccessories);
     }
 
+    private void clearParts()
+    {
+        body = null;
+        head = null;
+        headwear = null;
+        leftArm = null;
+        rightArm = null;
+        leftForeArm = null;
+        rightForeArm = null;
+        leftLeg = null;
+        rightLeg = null;
+        leftForeLeg = null;
+        rightForeLeg = null;
+        bodywear = null;
+        leftArmwear = null;
+        rightArmwear = null;
+        leftForeArmwear = null;
+        rightForeArmwear = null;
+        leftLegwear = null;
+        rightLegwear = null;
+        leftForeLegwear = null;
+        rightForeLegwear = null;
+    }
+
+    public void recreateParts(PlayerModel<AbstractClientPlayer> model, float scaleFactor)
+    {
+        clearParts();
+        createParts(model, scaleFactor);
+    }
+
+    private int getCurrentArmWidth()
+    {
+        if (leftArm == null || leftArm.getCubes().isEmpty())
+        {
+            return -1;
+        }
+
+        goblinbob.mobends.core.client.model.BendsCube cube = leftArm.getCubes().get(0);
+        return Math.round(cube.maxX - cube.minX);
+    }
+
+    private void ensureArmGeometryMatchesPlayer(AbstractClientPlayer player,
+            LivingEntityRenderer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> renderer)
+    {
+        if (player == null || PlayerPreviewer.isPreviewInProgress())
+        {
+            return;
+        }
+
+        updateSmallArms(player);
+
+        int expectedArmWidth = this.smallArms ? 3 : 4;
+        if (body != null && getCurrentArmWidth() != expectedArmWidth)
+        {
+            recreateParts(renderer.getModel(), 0F);
+        }
+    }
+
     @Override
     public boolean createParts(PlayerModel<AbstractClientPlayer> original, float scaleFactor)
     {
+        if (original != null)
+        {
+            this.smallArms = detectSlimFromModel(original);
+        }
+
         // Arms
         int armWidth = this.smallArms ? 3 : 4;
         float armY = this.smallArms ? -9.5F : -10F;
+
+        // When a 12px limb is split at the joint, hide the cap face at the cut and map UVs
+        // against the full 12px limb layout so soles/cuffs stay on the correct segment.
+        final byte allFaces = (byte) 0b111111;
+        final byte upperLimbFaces = (byte) (allFaces & ~(1 << BendsCube.BOTTOM));
+        final byte lowerLimbFaces = (byte) (allFaces & ~(1 << BendsCube.TOP));
+        final int limbUvHeight = 12;
+        final int limbSegmentHeight = 6;
+        final int limbUvDepth = 4;
 
         // Create custom bendable parts using BendsModelPart
         // Body - root of upper body hierarchy
@@ -248,61 +332,66 @@ public class PlayerMutator extends BipedMutator<PlayerData, AbstractClientPlayer
         head.addChild(headwear);
 
         // Left Arm (texture at 32, 48 for player) - child of body
+        // No mirror: player uses distinct left-side UVs and asymmetric box layout
         leftArm = new BendsModelPart(32, 48)
                 .setTextureSize(64, 64)
-                .setPosition(5.0F, armY, 0.0F)
-                .setMirror(true);
-        leftArm.addCube(-1.0F, -2.0F, -2.0F, armWidth, 6, 4, scaleFactor);
+                .setPosition(5.0F, armY, 0.0F);
+        leftArm.addLimbSliceCube(-1.0F, -2.0F, -2.0F, armWidth, limbSegmentHeight, limbUvDepth,
+                scaleFactor, upperLimbFaces, armWidth, limbUvHeight, limbUvDepth, 0);
         body.addChild(leftArm);
 
         // Right Arm (texture at 40, 16 for player) - child of body
         rightArm = new BendsModelPart(40, 16)
                 .setTextureSize(64, 64)
                 .setPosition(-5.0F, armY, 0.0F);
-        rightArm.addCube(-armWidth + 1, -2.0F, -2.0F, armWidth, 6, 4, scaleFactor);
+        rightArm.addLimbSliceCube(-armWidth + 1, -2.0F, -2.0F, armWidth, limbSegmentHeight, limbUvDepth,
+                scaleFactor, upperLimbFaces, armWidth, limbUvHeight, limbUvDepth, 0);
         body.addChild(rightArm);
 
-        // Left Forearm - child of leftArm
-        leftForeArm = new BendsModelPart(32, 48 + 6)
+        // Left Forearm - child of leftArm (same texture origin as upper arm, lower UV half)
+        leftForeArm = new BendsModelPart(32, 48)
                 .setTextureSize(64, 64)
-                .setPosition(0.0F, 4.0F, 2.0F)
-                .setMirror(true);
-        leftForeArm.addCube(-1.0F, 0.0F, -4.0F, armWidth, 6, 4, scaleFactor);
+                .setPosition(0.0F, 4.0F, 2.0F);
+        leftForeArm.addLimbSliceCube(-1.0F, 0.0F, -4.0F, armWidth, limbSegmentHeight, limbUvDepth,
+                scaleFactor, lowerLimbFaces, armWidth, limbUvHeight, limbUvDepth, limbSegmentHeight);
         leftArm.addChild(leftForeArm);
 
         // Right Forearm - child of rightArm
-        rightForeArm = new BendsModelPart(40, 16 + 6)
+        rightForeArm = new BendsModelPart(40, 16)
                 .setTextureSize(64, 64)
                 .setPosition(0.0F, 4.0F, 2.0F);
-        rightForeArm.addCube(-armWidth + 1, 0.0F, -4.0F, armWidth, 6, 4, scaleFactor);
+        rightForeArm.addLimbSliceCube(-armWidth + 1, 0.0F, -4.0F, armWidth, limbSegmentHeight, limbUvDepth,
+                scaleFactor, lowerLimbFaces, armWidth, limbUvHeight, limbUvDepth, limbSegmentHeight);
         rightArm.addChild(rightForeArm);
 
         // Legs (texture at 16, 48 for left leg, 0, 16 for right leg in player model)
         // Legs are independent roots (not children of body)
         leftLeg = new BendsModelPart(16, 48)
                 .setTextureSize(64, 64)
-                .setPosition(1.9F, 12.0F, 0.0F)
-                .setMirror(true);
-        leftLeg.addCube(-2.0F, 0.0F, -2.0F, 4, 6, 4, scaleFactor);
+                .setPosition(1.9F, 12.0F, 0.0F);
+        leftLeg.addLimbSliceCube(-2.0F, 0.0F, -2.0F, 4, limbSegmentHeight, limbUvDepth,
+                scaleFactor, upperLimbFaces, 4, limbUvHeight, limbUvDepth, 0);
 
         rightLeg = new BendsModelPart(0, 16)
                 .setTextureSize(64, 64)
                 .setPosition(-1.9F, 12.0F, 0.0F);
-        rightLeg.addCube(-2.0F, 0.0F, -2.0F, 4, 6, 4, scaleFactor);
+        rightLeg.addLimbSliceCube(-2.0F, 0.0F, -2.0F, 4, limbSegmentHeight, limbUvDepth,
+                scaleFactor, upperLimbFaces, 4, limbUvHeight, limbUvDepth, 0);
 
         // Left Foreleg - child of leftLeg
-        leftForeLeg = new BendsModelPart(16, 48 + 6)
+        leftForeLeg = new BendsModelPart(16, 48)
                 .setTextureSize(64, 64)
-                .setPosition(0.0F, 6.0F, -2.0F)
-                .setMirror(true);
-        leftForeLeg.addCube(-2.0F, 0.0F, 0.0F, 4, 6, 4, scaleFactor);
+                .setPosition(0.0F, 6.0F, -2.0F);
+        leftForeLeg.addLimbSliceCube(-2.0F, 0.0F, 0.0F, 4, limbSegmentHeight, limbUvDepth,
+                scaleFactor, lowerLimbFaces, 4, limbUvHeight, limbUvDepth, limbSegmentHeight);
         leftLeg.addChild(leftForeLeg);
 
         // Right Foreleg - child of rightLeg
-        rightForeLeg = new BendsModelPart(0, 16 + 6)
+        rightForeLeg = new BendsModelPart(0, 16)
                 .setTextureSize(64, 64)
                 .setPosition(0.0F, 6.0F, -2.0F);
-        rightForeLeg.addCube(-2.0F, 0.0F, 0.0F, 4, 6, 4, scaleFactor);
+        rightForeLeg.addLimbSliceCube(-2.0F, 0.0F, 0.0F, 4, limbSegmentHeight, limbUvDepth,
+                scaleFactor, lowerLimbFaces, 4, limbUvHeight, limbUvDepth, limbSegmentHeight);
         rightLeg.addChild(rightForeLeg);
 
         // Wear layers (second skin layer)
@@ -316,54 +405,58 @@ public class PlayerMutator extends BipedMutator<PlayerData, AbstractClientPlayer
 
         // Left arm wear - child of leftArm
         leftArmwear = new BendsModelPart(48, 48)
-                .setTextureSize(64, 64)
-                .setMirror(true);
-        leftArmwear.addCube(-1.0F, -2.0F, -2.0F, armWidth, 6, 4, scaleFactor + wearOffset);
+                .setTextureSize(64, 64);
+        leftArmwear.addLimbSliceCube(-1.0F, -2.0F, -2.0F, armWidth, limbSegmentHeight, limbUvDepth,
+                scaleFactor + wearOffset, upperLimbFaces, armWidth, limbUvHeight, limbUvDepth, 0);
         leftArm.addChild(leftArmwear);
 
         // Right arm wear - child of rightArm
         rightArmwear = new BendsModelPart(40, 32)
                 .setTextureSize(64, 64);
-        rightArmwear.addCube(-armWidth + 1, -2.0F, -2.0F, armWidth, 6, 4, scaleFactor + wearOffset);
+        rightArmwear.addLimbSliceCube(-armWidth + 1, -2.0F, -2.0F, armWidth, limbSegmentHeight, limbUvDepth,
+                scaleFactor + wearOffset, upperLimbFaces, armWidth, limbUvHeight, limbUvDepth, 0);
         rightArm.addChild(rightArmwear);
 
         // Left forearm wear - child of leftForeArm
-        leftForeArmwear = new BendsModelPart(48, 48 + 6)
-                .setTextureSize(64, 64)
-                .setMirror(true);
-        leftForeArmwear.addCube(-1.0F, 0.0F, -4.0F, armWidth, 6, 4, scaleFactor + wearOffset);
+        leftForeArmwear = new BendsModelPart(48, 48)
+                .setTextureSize(64, 64);
+        leftForeArmwear.addLimbSliceCube(-1.0F, 0.0F, -4.0F, armWidth, limbSegmentHeight, limbUvDepth,
+                scaleFactor + wearOffset, lowerLimbFaces, armWidth, limbUvHeight, limbUvDepth, limbSegmentHeight);
         leftForeArm.addChild(leftForeArmwear);
 
         // Right forearm wear - child of rightForeArm
-        rightForeArmwear = new BendsModelPart(40, 32 + 6)
+        rightForeArmwear = new BendsModelPart(40, 32)
                 .setTextureSize(64, 64);
-        rightForeArmwear.addCube(-armWidth + 1, 0.0F, -4.0F, armWidth, 6, 4, scaleFactor + wearOffset);
+        rightForeArmwear.addLimbSliceCube(-armWidth + 1, 0.0F, -4.0F, armWidth, limbSegmentHeight, limbUvDepth,
+                scaleFactor + wearOffset, lowerLimbFaces, armWidth, limbUvHeight, limbUvDepth, limbSegmentHeight);
         rightForeArm.addChild(rightForeArmwear);
 
         // Left leg wear - child of leftLeg
         leftLegwear = new BendsModelPart(0, 48)
-                .setTextureSize(64, 64)
-                .setMirror(true);
-        leftLegwear.addCube(-2.0F, 0.0F, -2.0F, 4, 6, 4, scaleFactor + wearOffset);
+                .setTextureSize(64, 64);
+        leftLegwear.addLimbSliceCube(-2.0F, 0.0F, -2.0F, 4, limbSegmentHeight, limbUvDepth,
+                scaleFactor + wearOffset, upperLimbFaces, 4, limbUvHeight, limbUvDepth, 0);
         leftLeg.addChild(leftLegwear);
 
         // Right leg wear - child of rightLeg
         rightLegwear = new BendsModelPart(0, 32)
                 .setTextureSize(64, 64);
-        rightLegwear.addCube(-2.0F, 0.0F, -2.0F, 4, 6, 4, scaleFactor + wearOffset);
+        rightLegwear.addLimbSliceCube(-2.0F, 0.0F, -2.0F, 4, limbSegmentHeight, limbUvDepth,
+                scaleFactor + wearOffset, upperLimbFaces, 4, limbUvHeight, limbUvDepth, 0);
         rightLeg.addChild(rightLegwear);
 
         // Left foreleg wear - child of leftForeLeg
-        leftForeLegwear = new BendsModelPart(0, 48 + 6)
-                .setTextureSize(64, 64)
-                .setMirror(true);
-        leftForeLegwear.addCube(-2.0F, 0.0F, 0.0F, 4, 6, 4, scaleFactor + wearOffset);
+        leftForeLegwear = new BendsModelPart(0, 48)
+                .setTextureSize(64, 64);
+        leftForeLegwear.addLimbSliceCube(-2.0F, 0.0F, 0.0F, 4, limbSegmentHeight, limbUvDepth,
+                scaleFactor + wearOffset, lowerLimbFaces, 4, limbUvHeight, limbUvDepth, limbSegmentHeight);
         leftForeLeg.addChild(leftForeLegwear);
 
         // Right foreleg wear - child of rightForeLeg
-        rightForeLegwear = new BendsModelPart(0, 32 + 6)
+        rightForeLegwear = new BendsModelPart(0, 32)
                 .setTextureSize(64, 64);
-        rightForeLegwear.addCube(-2.0F, 0.0F, 0.0F, 4, 6, 4, scaleFactor + wearOffset);
+        rightForeLegwear.addLimbSliceCube(-2.0F, 0.0F, 0.0F, 4, limbSegmentHeight, limbUvDepth,
+                scaleFactor + wearOffset, lowerLimbFaces, 4, limbUvHeight, limbUvDepth, limbSegmentHeight);
         rightForeLeg.addChild(rightForeLegwear);
 
         return true;
@@ -381,6 +474,8 @@ public class PlayerMutator extends BipedMutator<PlayerData, AbstractClientPlayer
                                    LivingEntityRenderer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> renderer,
                                    float partialTicks)
     {
+        ensureArmGeometryMatchesPlayer(data.getEntity(), renderer);
+
         // Sync wear visibility with base parts
         if (leftForeArmwear != null && leftArmwear != null)
             leftForeArmwear.setVisible(leftArmwear.isShowing());
@@ -430,20 +525,9 @@ public class PlayerMutator extends BipedMutator<PlayerData, AbstractClientPlayer
     @Override
     public PlayerData getData(AbstractClientPlayer entity)
     {
-        // Update slim arms based on the actual player's skin model
-        // This ensures correct detection even if initial reflection failed
         if (entity != null && !PlayerPreviewer.isPreviewInProgress())
         {
-            boolean playerIsSlim = entity.getModelName().equals("slim");
-            if (playerIsSlim != this.smallArms)
-            {
-                goblinbob.mobends.standard.main.MoBends.LOG.debug(
-                    "Slim arm mismatch detected for {}: mutator={}, player={}. Updating.",
-                    entity.getName().getString(), this.smallArms, playerIsSlim);
-                this.smallArms = playerIsSlim;
-                // Note: Parts are already created with the old dimension.
-                // They will be corrected on next mutation cycle.
-            }
+            updateSmallArms(entity);
         }
         return PlayerPreviewer.isPreviewInProgress() ? PlayerPreviewer.getPreviewData() : super.getData(entity);
     }

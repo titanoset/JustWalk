@@ -10,6 +10,9 @@ import net.minecraft.client.player.AbstractClientPlayer;
  */
 public class PlayerRenderer extends BipedRenderer<AbstractClientPlayer>
 {
+    // Net crouch compensation after vanilla setupRotations (+0.125Y) and sneak globalOffset
+    private static final float CROUCH_Y_OFFSET = 2.0F;
+    private static final float CROUCH_FLYING_Y_OFFSET = 1.5F;
 
     @Override
     protected void transformLocally(AbstractClientPlayer entity, EntityData<?> data, float partialTicks, PoseStack poseStack)
@@ -18,11 +21,11 @@ public class PlayerRenderer extends BipedRenderer<AbstractClientPlayer>
         {
             if (entity.getAbilities().flying)
             {
-                poseStack.translate(0F, 4F * scale, 0F);
+                poseStack.translate(0F, CROUCH_FLYING_Y_OFFSET * scale, 0F);
             }
             else
             {
-                poseStack.translate(0F, 5F * scale, 0F);
+                poseStack.translate(0F, CROUCH_Y_OFFSET * scale, 0F);
             }
         }
     }

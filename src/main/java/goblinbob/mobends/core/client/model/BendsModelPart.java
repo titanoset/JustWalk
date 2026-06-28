@@ -2,6 +2,7 @@ package goblinbob.mobends.core.client.model;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
 import goblinbob.mobends.core.math.SmoothOrientation;
 import goblinbob.mobends.core.math.TransformUtils;
 import goblinbob.mobends.core.math.matrix.IMat4x4d;
@@ -193,12 +194,35 @@ public class BendsModelPart implements IModelPart
                                offset.z * scale * offsetScale);
         }
 
+        applyMirrorTransform(poseStack);
+
         // Apply quaternion rotation
         GlHelper.rotate(poseStack, rotation.getSmooth());
 
         if (this.scale.x != 1.0F || this.scale.y != 1.0F || this.scale.z != 1.0F)
         {
             poseStack.scale(this.scale.x, this.scale.y, this.scale.z);
+        }
+    }
+
+    /**
+     * Apply vanilla-style mirror transform before rotation (matches ModelPart.translateAndRotate).
+     */
+    private void applyMirrorTransform(PoseStack poseStack)
+    {
+        if (mirror)
+        {
+            poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
+            poseStack.scale(-1.0F, 1.0F, 1.0F);
+        }
+    }
+
+    private void applyMirrorTransform(IMat4x4d matrix)
+    {
+        if (mirror)
+        {
+            TransformUtils.rotate(matrix, Math.PI, 0, 1, 0, matrix);
+            TransformUtils.scale(matrix, -1, 1, 1, matrix);
         }
     }
 
@@ -241,6 +265,8 @@ public class BendsModelPart implements IModelPart
                                offset.z * scale * offsetScale);
         }
 
+        applyMirrorTransform(poseStack);
+
         // Apply quaternion rotation
         GlHelper.rotate(poseStack, rotation.getSmooth());
 
@@ -266,6 +292,8 @@ public class BendsModelPart implements IModelPart
                                     offset.y * scale * offsetScale,
                                     offset.z * scale * offsetScale);
         }
+
+        applyMirrorTransform(matrix);
 
         TransformUtils.rotate(matrix, rotation.getSmooth());
 
@@ -432,6 +460,35 @@ public class BendsModelPart implements IModelPart
         BendsCube cube = new BendsCube(textureOffsetX, textureOffsetY,
                                        x, y, z, width, height, depth,
                                        inflation, textureWidth, textureHeight, mirror);
+        this.cubes.add(cube);
+        return this;
+    }
+
+    public BendsModelPart addCube(float x, float y, float z, int width, int height, int depth,
+                                  float inflation, byte faceVisibilityFlag)
+    {
+        BendsCube cube = new BendsCube(textureOffsetX, textureOffsetY,
+                                       x, y, z, width, height, depth,
+                                       inflation, textureWidth, textureHeight, mirror,
+                                       faceVisibilityFlag);
+        this.cubes.add(cube);
+        return this;
+    }
+
+    /**
+     * Add one segment of a 12px-tall limb with correct sliced UV mapping.
+     */
+    public BendsModelPart addLimbSliceCube(float x, float y, float z,
+                                           int width, int segmentHeight, int depth,
+                                           float inflation, byte faceVisibilityFlag,
+                                           int limbUvWidth, int limbUvHeight, int limbUvDepth,
+                                           int limbVOffset)
+    {
+        BendsCube cube = new BendsCube(textureOffsetX, textureOffsetY,
+                                       x, y, z, width, segmentHeight, depth,
+                                       inflation, textureWidth, textureHeight, mirror,
+                                       faceVisibilityFlag,
+                                       limbUvWidth, limbUvHeight, limbUvDepth, limbVOffset);
         this.cubes.add(cube);
         return this;
     }

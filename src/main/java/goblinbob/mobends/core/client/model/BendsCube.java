@@ -92,13 +92,6 @@ public class BendsCube
         float y2 = by2 * scale;
         float z2 = bz2 * scale;
 
-        if (mirror)
-        {
-            float temp = x2;
-            x2 = x1;
-            x1 = temp;
-        }
-
         // Create the 8 vertices (now in world scale)
         BendsVertex v000 = new BendsVertex(x1, y1, z1, 0, 0);
         BendsVertex v100 = new BendsVertex(x2, y1, z1, 0, 0);
@@ -150,6 +143,96 @@ public class BendsCube
         quads[5] = createQuad(new BendsVertex[] {v001, v101, v111, v011},
                 u + depth + width + depth, v + depth,
                 u + depth + width + depth + width, v + depth + height,
+                textureWidth, textureHeight);
+
+        if (mirror)
+        {
+            for (BendsQuad quad : quads)
+            {
+                quad.flipFace();
+            }
+        }
+    }
+
+    /**
+     * Create a cube for one half of a 12px-tall limb split at the knee/elbow.
+     * Cap UVs stay anchored to the full limb origin so soles and cuffs map correctly.
+     */
+    public BendsCube(int texOffsetX, int texOffsetY,
+                     float x, float y, float z,
+                     int width, int segmentHeight, int depth,
+                     float inflation,
+                     float textureWidth, float textureHeight,
+                     boolean mirror,
+                     byte faceVisibilityFlag,
+                     int limbUvWidth, int limbUvHeight, int limbUvDepth, int limbVOffset)
+    {
+        this.faceVisibilityFlag = faceVisibilityFlag;
+
+        float bx1 = x - inflation;
+        float by1 = y - inflation;
+        float bz1 = z - inflation;
+        float bx2 = x + width + inflation;
+        float by2 = y + segmentHeight + inflation;
+        float bz2 = z + depth + inflation;
+
+        this.minX = bx1;
+        this.minY = by1;
+        this.minZ = bz1;
+        this.maxX = bx2;
+        this.maxY = by2;
+        this.maxZ = bz2;
+
+        float scale = 1.0F / 16.0F;
+        float x1 = bx1 * scale;
+        float y1 = by1 * scale;
+        float z1 = bz1 * scale;
+        float x2 = bx2 * scale;
+        float y2 = by2 * scale;
+        float z2 = bz2 * scale;
+
+        BendsVertex v000 = new BendsVertex(x1, y1, z1, 0, 0);
+        BendsVertex v100 = new BendsVertex(x2, y1, z1, 0, 0);
+        BendsVertex v110 = new BendsVertex(x2, y2, z1, 0, 0);
+        BendsVertex v010 = new BendsVertex(x1, y2, z1, 0, 0);
+        BendsVertex v001 = new BendsVertex(x1, y1, z2, 0, 0);
+        BendsVertex v101 = new BendsVertex(x2, y1, z2, 0, 0);
+        BendsVertex v111 = new BendsVertex(x2, y2, z2, 0, 0);
+        BendsVertex v011 = new BendsVertex(x1, y2, z2, 0, 0);
+
+        int u = texOffsetX;
+        int v = texOffsetY;
+        int sideVStart = v + limbUvDepth + limbVOffset;
+        int sideVEnd = sideVStart + segmentHeight;
+
+        quads[RIGHT] = createQuad(new BendsVertex[] {v101, v100, v110, v111},
+                u + limbUvDepth + limbUvWidth, sideVStart,
+                u + limbUvDepth + limbUvWidth + limbUvDepth, sideVEnd,
+                textureWidth, textureHeight);
+
+        quads[LEFT] = createQuad(new BendsVertex[] {v000, v001, v011, v010},
+                u, sideVStart,
+                u + limbUvDepth, sideVEnd,
+                textureWidth, textureHeight);
+
+        quads[TOP] = createQuad(new BendsVertex[] {v101, v001, v000, v100},
+                u + limbUvDepth, v,
+                u + limbUvDepth + limbUvWidth, v + limbUvDepth,
+                textureWidth, textureHeight);
+
+        quads[BOTTOM] = createQuad(new BendsVertex[] {v110, v010, v011, v111},
+                u + limbUvDepth + limbUvWidth, v,
+                u + limbUvDepth + limbUvWidth + limbUvWidth, v + limbUvDepth,
+                textureWidth, textureHeight);
+
+        quads[FRONT] = createQuad(new BendsVertex[] {v100, v000, v010, v110},
+                u + limbUvDepth, sideVStart,
+                u + limbUvDepth + limbUvWidth, sideVEnd,
+                textureWidth, textureHeight);
+
+        quads[BACK] = createQuad(new BendsVertex[] {v001, v101, v111, v011},
+                u + limbUvDepth + limbUvWidth + limbUvDepth, sideVStart,
+                u + limbUvDepth + limbUvWidth + limbUvDepth + limbUvWidth, sideVEnd,
                 textureWidth, textureHeight);
 
         if (mirror)

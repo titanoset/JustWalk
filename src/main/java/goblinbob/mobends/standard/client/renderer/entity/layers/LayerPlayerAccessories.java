@@ -92,16 +92,16 @@ public class LayerPlayerAccessories extends RenderLayer<AbstractClientPlayer, Pl
 
         poseStack.pushPose();
 
-        // Reverting the sneak transform
+        // Reverting the sneak transform (matches PlayerRenderer crouch compensation)
         if (player.isCrouching())
         {
             if (player.getAbilities().flying)
             {
-                poseStack.translate(0F, 4F * scale, 0F);
+                poseStack.translate(0F, 1.5F * scale, 0F);
             }
             else
             {
-                poseStack.translate(0F, 3F * scale, 0F);
+                poseStack.translate(0F, 2.0F * scale, 0F);
             }
         }
 
