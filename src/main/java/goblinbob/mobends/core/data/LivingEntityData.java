@@ -5,6 +5,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.block.LadderBlock;
@@ -90,14 +91,37 @@ public abstract class LivingEntityData<E extends LivingEntity> extends EntityDat
         {
             if (!this.alreadyAttacked || this.ticksAfterAttack > 5.0F)
             {
-                this.onAttack();
-                this.alreadyAttacked = true;
+                if (shouldTreatSwingAsAttack())
+                {
+                    this.onAttack();
+                    this.alreadyAttacked = true;
+                }
             }
         }
         else
         {
             this.alreadyAttacked = false;
         }
+    }
+
+    protected boolean shouldTreatSwingAsAttack()
+    {
+        if (entity.isUsingItem())
+        {
+            return false;
+        }
+
+        if (entity instanceof Player player)
+        {
+            // Opening chests and other block interactions swing the arm in vanilla,
+            // but that is not a combat attack.
+            if (player.containerMenu != player.inventoryMenu)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     @Override

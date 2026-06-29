@@ -80,7 +80,6 @@ public class AttackSlashDownAnimationBit extends AnimationBit<BipedEntityData<?>
 			
 			data.head.rotation.rotateY(-30 * handDirMtp);
 			data.globalOffset.slideY(-2F);
-			data.renderRotation.setSmoothness(.3F).orientY(-30 * handDirMtp);
 		}
 
 		mainItemRotation.orientInstantX(90);

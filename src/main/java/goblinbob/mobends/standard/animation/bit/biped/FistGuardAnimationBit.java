@@ -33,7 +33,6 @@ public class FistGuardAnimationBit extends AnimationBit<BipedEntityData<?>>
 		}
 
 		data.globalOffset.slideY(-2.0F);
-		data.renderRotation.setSmoothness(.3F).orientY(-20 * handDirMtp);
 		
 		data.rightArm.rotation.setSmoothness(.3F).orientX(-90F)
 				.rotateZ(20F);

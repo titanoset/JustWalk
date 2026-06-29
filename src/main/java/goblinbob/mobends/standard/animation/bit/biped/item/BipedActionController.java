@@ -152,26 +152,42 @@ public class BipedActionController
             }
         }
 
-        AttackActionType attackActionType = getItemAttackAction(heldItemMainhand.getItem());
-
-        if (this.currentAttackActionType != attackActionType)
+        final boolean inCombatSwing = entity.swinging || data.getTicksAfterAttack() < 60.0F;
+        if (inCombatSwing)
         {
-            this.currentAttackActionType = attackActionType;
+            AttackActionType attackActionType = getItemAttackAction(heldItemMainhand.getItem());
 
-            ItemActionFactory<AnimationBit<BipedEntityData<?>>> factory = ITEM_ATTACK_ACTION_MAP.get(attackActionType);
-            if (factory == null)
+            if (this.currentAttackActionType != attackActionType)
             {
-                this.actionBit = null;
+                this.currentAttackActionType = attackActionType;
+
+                ItemActionFactory<AnimationBit<BipedEntityData<?>>> factory = ITEM_ATTACK_ACTION_MAP.get(attackActionType);
+                if (factory == null)
+                {
+                    this.actionBit = null;
+                    this.layerAction.clearAnimation();
+                }
+                else
+                {
+                    this.actionBit = factory.create(primaryHand);
+                    this.layerAction.playOrContinueBit(this.actionBit, data);
+                }
+            }
+
+            this.layerAction.perform(data);
+        }
+        else if (this.currentAttackActionType != null)
+        {
+            this.currentAttackActionType = null;
+            if (currentUseActionType == null)
+            {
                 this.layerAction.clearAnimation();
             }
-            else
-            {
-                this.actionBit = factory.create(primaryHand);
-                this.layerAction.playOrContinueBit(this.actionBit, data);
-            }
         }
-
-        this.layerAction.perform(data);
+        else if (useActionType != null)
+        {
+            this.layerAction.perform(data);
+        }
     }
 
     public void clearAction()

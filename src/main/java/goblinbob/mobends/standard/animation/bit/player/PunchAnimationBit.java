@@ -22,11 +22,11 @@ public class PunchAnimationBit extends AnimationBit<BipedEntityData<?>>
 		data.rightForeArm.rotation.setSmoothness(.3F).orientX(-80);
 		data.leftForeArm.rotation.setSmoothness(.3F).orientX(-80);
 
-		float renderRotationY = 0F;
+		float bodyLeanY = 0F;
 
 		if (data.isStillHorizontally())
 		{
-			renderRotationY = -20F;
+			bodyLeanY = -20F;
 			data.globalOffset.slideY(-2.0f);
 
 			data.rightLeg.rotation.setSmoothness(.3F).orientX(-30F).rotateZ(10);
@@ -40,7 +40,7 @@ public class PunchAnimationBit extends AnimationBit<BipedEntityData<?>>
 			data.rightArm.rotation.setSmoothness(.9F).orientY(-90).rotateX(-90.0f + data.headPitch.get()).rotateY(10);
 			data.rightForeArm.rotation.setSmoothness(.9F).orientX(0);
 
-			data.body.rotation.setSmoothness(.6F).orientY(-20.0f + renderRotationY);
+			data.body.rotation.setSmoothness(.6F).orientY(-20.0f + bodyLeanY);
 			data.head.rotation.rotateY(20.0F);
 		}
 		else
@@ -48,10 +48,8 @@ public class PunchAnimationBit extends AnimationBit<BipedEntityData<?>>
 			data.leftArm.rotation.setSmoothness(.9F).orientY(100).rotateX(-90F + data.headPitch.get()).rotateY(-16.0F);
 
 			data.leftForeArm.rotation.setSmoothness(.9F).orientX(0);
-			data.body.rotation.setSmoothness(.6F).orientY(20.0f + renderRotationY);
+			data.body.rotation.setSmoothness(.6F).orientY(20.0f + bodyLeanY);
 			data.head.rotation.rotateY(-20.0F);
 		}
-
-		data.renderRotation.orientY(renderRotationY);
 	}
 }

@@ -42,8 +42,6 @@ public class AttackStanceAnimationBit extends AnimationBit<BipedEntityData<?>>
 
 		float breath0 = (float) Math.sin(DataUpdateHandler.getTicks() / 5.0);
 		float breath1 = (float) Math.cos(DataUpdateHandler.getTicks() / 5.7);
-		
-		data.renderRotation.setSmoothness(.3F).orientY(-30 * handDirMtp);
 
 		float bodyRotationX = 20.0F + breath0 * 2.0F;
 
