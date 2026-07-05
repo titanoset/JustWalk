@@ -182,7 +182,7 @@ public class ArmorCube
 
         // Bottom face (+Y): only show for lower portion (vOffset > 0)
         quads[BOTTOM] = createQuad(new ArmorVertex[] {v110, v010, v011, v111},
-                u + uvDepth + uvWidth, v, u + uvDepth + uvWidth + uvWidth, v + uvDepth, textureWidth, textureHeight);
+                u + uvDepth + uvWidth, v + uvDepth, u + uvDepth + uvWidth + uvWidth, v, textureWidth, textureHeight);
 
         // Front face (-Z): v100, v000, v010, v110
         quads[FRONT] = createQuad(new ArmorVertex[] {v100, v000, v010, v110},

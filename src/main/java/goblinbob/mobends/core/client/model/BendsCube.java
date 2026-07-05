@@ -129,8 +129,8 @@ public class BendsCube
 
         // Bottom face (+Y side): vertices v110, v010, v011, v111
         quads[3] = createQuad(new BendsVertex[] {v110, v010, v011, v111},
-                u + depth + width, v,
-                u + depth + width + width, v + depth,
+                u + depth + width, v + depth,
+                u + depth + width + width, v,
                 textureWidth, textureHeight);
 
         // Front face (-Z side): vertices v100, v000, v010, v110
@@ -221,8 +221,8 @@ public class BendsCube
                 textureWidth, textureHeight);
 
         quads[BOTTOM] = createQuad(new BendsVertex[] {v110, v010, v011, v111},
-                u + limbUvDepth + limbUvWidth, v,
-                u + limbUvDepth + limbUvWidth + limbUvWidth, v + limbUvDepth,
+                u + limbUvDepth + limbUvWidth, v + limbUvDepth,
+                u + limbUvDepth + limbUvWidth + limbUvWidth, v,
                 textureWidth, textureHeight);
 
         quads[FRONT] = createQuad(new BendsVertex[] {v100, v000, v010, v110},
