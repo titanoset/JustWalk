@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import goblinbob.mobends.core.client.model.BendsCube;
 import goblinbob.mobends.core.client.model.BendsModelPart;
 import goblinbob.mobends.core.client.model.IModelPart;
+import goblinbob.mobends.core.client.MoBendsRenderContext;
 import goblinbob.mobends.core.data.IEntityDataFactory;
 import goblinbob.mobends.core.math.Quaternion;
 import goblinbob.mobends.core.mutators.Mutator;
@@ -325,6 +326,8 @@ public abstract class BipedMutator<D extends BipedEntityData<E>,
     {
         if (model == null) return;
 
+        MoBendsRenderContext.beginPartOverrides();
+
         syncPartToModelPart(head, model.head);
         syncPartToModelPart(body, model.body);
         syncPartToModelPart(leftArm, model.leftArm);
@@ -352,6 +355,8 @@ public abstract class BipedMutator<D extends BipedEntityData<E>,
         modelPart.xRot = euler[0];
         modelPart.yRot = euler[1];
         modelPart.zRot = euler[2];
+
+        MoBendsRenderContext.registerPartOverride(modelPart, bendsPart);
     }
 
     /**

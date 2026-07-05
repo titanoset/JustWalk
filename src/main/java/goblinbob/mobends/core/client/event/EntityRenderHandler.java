@@ -3,13 +3,13 @@ package goblinbob.mobends.core.client.event;
 import com.mojang.blaze3d.vertex.PoseStack;
 import goblinbob.mobends.core.bender.EntityBender;
 import goblinbob.mobends.core.bender.EntityBenderRegistry;
+import goblinbob.mobends.core.client.MoBendsPoseSync;
 import goblinbob.mobends.core.client.MoBendsRenderContext;
 import goblinbob.mobends.core.compat.PlayerAnimationLibCompat;
 import goblinbob.mobends.core.data.LivingEntityData;
 import goblinbob.mobends.core.mutators.Mutator;
 import goblinbob.mobends.standard.mutators.BipedMutator;
 import net.minecraft.client.model.EntityModel;
-import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.client.event.RenderLivingEvent;
@@ -57,11 +57,7 @@ public class EntityRenderHandler
                     MoBendsRenderContext.setCurrentBipedMutator(bipedMutator);
                     MoBendsRenderContext.beginMainModelRender();
 
-                    EntityModel<?> model = renderer.getModel();
-                    if (model instanceof HumanoidModel<?> humanoidModel)
-                    {
-                        bipedMutator.syncPosesToVanillaModel(humanoidModel);
-                    }
+                    MoBendsPoseSync.syncAnimatedPlayerModel(living, renderer);
                 }
 
                 entityBender.beforeRender(data, living, pt, poseStack);

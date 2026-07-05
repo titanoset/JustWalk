@@ -104,7 +104,7 @@ public class SwimmingAnimationBit extends AnimationBit<BipedEntityData<?>>
 			data.leftForeLeg.rotation.setSmoothness(.4F).orientX(5);
 			data.rightForeLeg.rotation.setSmoothness(.4F).orientX(5);
 
-			data.body.rotation.setSmoothness(.5F).orientX(armSway*-20);
+			data.body.rotation.setSmoothness(.5F).orientX(armSway * -20 + t * 80F);
 
 			data.renderRightItemRotation.setSmoothness(.3F).orientX(armSway*50);
 		}
@@ -112,20 +112,14 @@ public class SwimmingAnimationBit extends AnimationBit<BipedEntityData<?>>
 		data.head.rotation.setSmoothness(1.0F).orientX(data.headPitch.get())
 		  				  .rotateY(data.headYaw.get());
 
-		if (vanillaSwimming)
-		{
-			data.renderRotation.setSmoothness(.7F).orientZero();
-			data.globalOffset.slideZ(0, .7F);
-			data.globalOffset.slideY(0, .7F);
-		}
-		else
+		if (useDeepPose)
 		{
 			data.head.rotation.rotateX(-80F * t);
-			data.renderRotation.setSmoothness(.7F).orientX(t * 80F);
-			data.globalOffset.slideZ(-20 * t, .7F);
-			data.globalOffset.slideY(14 * t, .7F);
 		}
 
+		// Keep the entity render origin aligned with the hitbox; pose changes stay on limbs.
+		data.renderRotation.setSmoothness(.7F).orientZero();
+		data.globalOffset.slideToZero(0.7F);
 		data.localOffset.slideToZero(0.3F);
 	}
 }

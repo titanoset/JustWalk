@@ -8,7 +8,8 @@ import org.spongepowered.asm.mixin.Mixin;
 /**
  * Mixin placeholder for armor layer.
  *
- * <p>Mo'Bends animated poses are synced to the parent entity model in EntityRenderHandler.
+ * <p>Mo'Bends animated poses are synced to the parent entity model after vanilla setupAnim
+ * (see LivingEntityRendererMixin) and during RenderLivingEvent.Pre.
  * Vanilla's copyPropertiesTo() then copies these poses from the parent model to the armor model.
  * This means armor automatically follows Mo'Bends animations without needing any mixin logic.</p>
  *

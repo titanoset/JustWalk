@@ -23,6 +23,9 @@ public class LadderClimbAnimationBit extends AnimationBit<BipedEntityData<?>>
         final LivingEntity living = data.getEntity();
 
         data.centerRotation.setSmoothness(.3F).orientZero();
+        data.renderRotation.setSmoothness(.6F).orientZero();
+        data.globalOffset.slideToZero(0.6F);
+        data.localOffset.slideToZero(0.6F);
 
 		final float legAnimationOffset = (float) Math.PI;
 		final float progress = data.getClimbingCycle();
@@ -31,7 +34,6 @@ public class LadderClimbAnimationBit extends AnimationBit<BipedEntityData<?>>
 		final float armSwingRight2 = (float) Math.sin(progress - 0.3F) * 0.5F + 0.5F;
 		final float armSwingLeft2 = (float) Math.sin(progress + Math.PI - 0.3F) * 0.5F + 0.5F;
 		final float armSwingDouble = (float) Math.sin(progress * 2) * 0.5F + 0.5F;
-		final float armSwingDouble2 = (float) Math.sin(progress * 2 - 1.8F) * 0.5F + 0.5F;
 
 		final float legSwingRight = (float) Math.sin(progress + legAnimationOffset) * 0.5F + 0.5F;
 		final float legSwingLeft = (float) Math.sin(progress + legAnimationOffset + Math.PI) * 0.5F + 0.5F;
@@ -41,11 +43,9 @@ public class LadderClimbAnimationBit extends AnimationBit<BipedEntityData<?>>
 		final float armOrientX = -45F;
 
 		final float climbingRotation = data.getClimbingRotation();
-		final float renderRotationY = Mth.wrapDegrees(living.getYRot() - data.headYaw.get() - climbingRotation);
-        data.renderRotation.setSmoothness(.6F).orientY(renderRotationY);
-        data.localOffset.slideZ(armSwingDouble2, .6F);
+		final float bodyYawOffset = Mth.wrapDegrees(climbingRotation - living.yBodyRot);
 
-        data.body.rotation.setSmoothness(.5F).orientX(armSwingDouble * 10F);
+        data.body.rotation.setSmoothness(.5F).orientX(armSwingDouble * 10F).rotateY(bodyYawOffset);
         data.rightArm.rotation.setSmoothness(.5F).orientX(-90F + armOrientX + armSwingRight * 70F);
         data.leftArm.rotation.setSmoothness(.5F).orientX(-90F + armOrientX + armSwingLeft * 70F);
         data.rightForeArm.rotation.setSmoothness(.5F).orientX(armSwingRight2 * -80F);
@@ -57,13 +57,13 @@ public class LadderClimbAnimationBit extends AnimationBit<BipedEntityData<?>>
         data.leftForeLeg.rotation.setSmoothness(.5F).orientX(20F + legSwingLeft2 * 90F);
 
         data.head.rotation.orientX(data.headPitch.get())
-                .rotateY(GUtil.clamp(Mth.wrapDegrees(data.headYaw.get() + renderRotationY), -90F, 90F));
+                .rotateY(GUtil.clamp(Mth.wrapDegrees(data.headYaw.get()), -90F, 90F));
 
 		final float ledgeClimbStart = 0.6F;
         if (data.getLedgeHeight() >= ledgeClimbStart)
         {
             final float armRotX = data.getLedgeHeight() - ledgeClimbStart;
-            data.body.rotation.setSmoothness(.5F).orientX(armRotX * 50F);
+            data.body.rotation.setSmoothness(.5F).orientX(armRotX * 50F).rotateY(bodyYawOffset);
 
             data.rightArm.rotation.setSmoothness(.5F).orientX(-100F + armRotX * 40F);
             data.leftArm.rotation.setSmoothness(.5F).orientX(-100F + armRotX * 40F);

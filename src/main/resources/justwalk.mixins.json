@@ -8,6 +8,8 @@
     ],
     "client": [
         "AgeableListModelMixin",
+        "LivingEntityRendererMixin",
+        "ModelPartMixin",
         "LivingEntityRendererAccessor",
         "armor.ModelPartAccessor",
         "armor.HumanoidArmorLayerAccessor",

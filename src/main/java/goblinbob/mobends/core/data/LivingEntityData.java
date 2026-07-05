@@ -168,6 +168,12 @@ public abstract class LivingEntityData<E extends LivingEntity> extends EntityDat
 
     public float getClimbingRotation()
     {
+        // yBodyRot is synced from the server for all players and matches vanilla ladder facing.
+        if (entity.onClimbable())
+        {
+            return Mth.wrapDegrees(entity.yBodyRot);
+        }
+
         return getLadderFacing().toYRot() + 180.0F;
     }
 
