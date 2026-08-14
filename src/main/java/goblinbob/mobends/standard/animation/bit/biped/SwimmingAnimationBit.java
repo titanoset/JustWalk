@@ -12,8 +12,8 @@ public class SwimmingAnimationBit extends AnimationBit<BipedEntityData<?>>
 	private static final String[] ACTIONS = new String[] { "swimming", "swimming_surface" };
 	private static final String[] ACTIONS_UNDERWATER = new String[] { "swimming", "swimming_deep" };
 	private static final float PI = (float) Math.PI;
-	private static final float PI_2 = PI*2;
-	private static final double DEEP_SWIM_FORWARD_THRESHOLD = 0.005;
+	private static final double STROKE_FORWARD_THRESHOLD = 0.005;
+	private static final float STROKE_SPEED = 0.35F;
 
 	private float transformTransition = 0F;
 	private float transitionSpeed = 0.1F;
@@ -21,7 +21,7 @@ public class SwimmingAnimationBit extends AnimationBit<BipedEntityData<?>>
 	@Override
 	public String[] getActions(BipedEntityData<?> data)
 	{
-		if (data.isUnderwater())
+		if (data.isUnderwater() || data.getEntity().isSwimming())
 			return ACTIONS_UNDERWATER;
 		else
 			return ACTIONS;
@@ -39,26 +39,18 @@ public class SwimmingAnimationBit extends AnimationBit<BipedEntityData<?>>
 	{
 		float ticks = DataUpdateHandler.getTicks();
 
-		float armSway = (Mth.cos(ticks * .1625F)+1F)/2.0f;
-		float armSway2 = (-Mth.sin(ticks * .1625F)+1F)/2.0f;
-		float legFlap = Mth.cos(ticks * .4625F);
-		float foreArmSway = ((ticks * .1625F) % PI_2)/PI_2;
-		float foreArmStretch = armSway * 2F;
-		foreArmStretch -= 1F;
-		foreArmStretch = Math.max(foreArmStretch, 0);
-
 		LivingEntity entity = data.getEntity();
 		boolean vanillaSwimming = entity.isSwimming();
-		boolean useDeepPose = !vanillaSwimming
-				&& !data.isStillHorizontally()
+		boolean useStrokePose = (vanillaSwimming
+				|| (data.isUnderwater()
+					&& !data.isStillHorizontally()
+					&& Math.abs(data.getForwardMomentum()) > STROKE_FORWARD_THRESHOLD))
 				&& !data.isDrawingBow()
-				&& data.getTicksAfterAttack() >= 10
-				&& data.isUnderwater()
-				&& Math.abs(data.getForwardMomentum()) > DEEP_SWIM_FORWARD_THRESHOLD;
+				&& data.getTicksAfterAttack() >= 10;
 
-        float t = (float) Tween.easeInOut(this.transformTransition, 3F);
+		float t = (float) Tween.easeInOut(this.transformTransition, 3F);
 
-		if (!useDeepPose)
+		if (!useStrokePose)
 		{
 			if (this.transformTransition > 0F)
 			{
@@ -66,19 +58,19 @@ public class SwimmingAnimationBit extends AnimationBit<BipedEntityData<?>>
 				this.transformTransition = Math.max(0F, this.transformTransition);
 			}
 
-			armSway = (Mth.cos(ticks * .0825F) + 1) / 2;
-			armSway2 = (-Mth.sin(ticks * .0825F) + 1) / 2;
-			legFlap = Mth.cos(ticks * .2625F);
+			float armSway = (Mth.cos(ticks * .0825F) + 1) / 2;
+			float armSway2 = (-Mth.sin(ticks * .0825F) + 1) / 2;
+			float legFlap = Mth.cos(ticks * .2625F);
 
-			data.leftArm.rotation.setSmoothness(.3F).orientX(armSway2*30-15).rotateZ(-armSway*30);
-			data.rightArm.rotation.setSmoothness(.3F).orientX(armSway2*30-15).rotateZ(armSway*30);
-			data.leftForeArm.rotation.setSmoothness(.3F).orientX(armSway2*-40);
-			data.rightForeArm.rotation.setSmoothness(.3F).orientX(armSway2*-40);
-			data.leftLeg.rotation.setSmoothness(.3F).orientX(legFlap*40);
-			data.rightLeg.rotation.setSmoothness(.3F).orientX(-legFlap*40);
+			data.leftArm.rotation.setSmoothness(.3F).orientX(armSway2 * 30 - 15).rotateZ(-armSway * 30);
+			data.rightArm.rotation.setSmoothness(.3F).orientX(armSway2 * 30 - 15).rotateZ(armSway * 30);
+			data.leftForeArm.rotation.setSmoothness(.3F).orientX(armSway2 * -40);
+			data.rightForeArm.rotation.setSmoothness(.3F).orientX(armSway2 * -40);
+			data.leftLeg.rotation.setSmoothness(.3F).orientX(legFlap * 40);
+			data.rightLeg.rotation.setSmoothness(.3F).orientX(-legFlap * 40);
 			data.leftForeLeg.rotation.setSmoothness(.4F).orientX(5);
 			data.rightForeLeg.rotation.setSmoothness(.4F).orientX(5);
-			data.body.rotation.orientX(armSway*10);
+			data.body.rotation.orientX(armSway * 10);
 		}
 		else
 		{
@@ -88,33 +80,47 @@ public class SwimmingAnimationBit extends AnimationBit<BipedEntityData<?>>
 				this.transformTransition = Math.min(this.transformTransition, 1F);
 			}
 
-			data.leftArm.rotation.setSmoothness(.3F).orientX(armSway*-120)
-					.rotateY(-90F * t)
-					.rotateX(armSway * 20);
-			data.rightArm.rotation.setSmoothness(.3F).orientX(armSway*-120)
-					.rotateY(90F * t)
-					.rotateX(armSway * 20);
+			float leftPhase = ticks * STROKE_SPEED;
+			float rightPhase = leftPhase + PI;
 
-			data.leftForeArm.rotation.setSmoothness(.3F).orientX((foreArmSway < 0.55f || foreArmSway > 0.9) ? foreArmStretch*-60.0f : -60);
-			data.rightForeArm.rotation.setSmoothness(.3F).orientX((foreArmSway < 0.55f || foreArmSway > 0.9) ? foreArmStretch*-60.0f : -60);
+			float leftCycle = (Mth.cos(leftPhase) + 1F) * 0.5F;
+			float rightCycle = (Mth.cos(rightPhase) + 1F) * 0.5F;
+			float leftSin = Mth.sin(leftPhase);
+			float rightSin = Mth.sin(rightPhase);
 
-			data.leftLeg.rotation.setSmoothness(.3F).orientX(legFlap*40);
-			data.rightLeg.rotation.setSmoothness(.3F).orientX(-legFlap*40);
+			// Alternating freestyle: one arm pulls while the other recovers.
+			data.leftArm.rotation.setSmoothness(.3F)
+					.orientX(-30F - leftCycle * 110F)
+					.rotateY(-70F * t)
+					.rotateZ(-15F + leftSin * 20F);
+			data.rightArm.rotation.setSmoothness(.3F)
+					.orientX(-30F - rightCycle * 110F)
+					.rotateY(70F * t)
+					.rotateZ(15F - rightSin * 20F);
 
-			data.leftForeLeg.rotation.setSmoothness(.4F).orientX(5);
-			data.rightForeLeg.rotation.setSmoothness(.4F).orientX(5);
+			data.leftForeArm.rotation.setSmoothness(.3F).orientX(-20F - leftCycle * 50F);
+			data.rightForeArm.rotation.setSmoothness(.3F).orientX(-20F - rightCycle * 50F);
 
-			data.body.rotation.setSmoothness(.5F).orientX(armSway * -20 + t * 80F);
+			float leftLegKick = Mth.cos(leftPhase + PI);
+			float rightLegKick = Mth.cos(rightPhase + PI);
+			data.leftLeg.rotation.setSmoothness(.3F).orientX(leftLegKick * 35F);
+			data.rightLeg.rotation.setSmoothness(.3F).orientX(rightLegKick * 35F);
 
-			data.renderRightItemRotation.setSmoothness(.3F).orientX(armSway*50);
+			data.leftForeLeg.rotation.setSmoothness(.4F).orientX(10F + Math.max(0F, -leftLegKick) * 25F);
+			data.rightForeLeg.rotation.setSmoothness(.4F).orientX(10F + Math.max(0F, -rightLegKick) * 25F);
+
+			data.body.rotation.setSmoothness(.5F).orientX(20F + t * 55F);
+
+			data.renderRightItemRotation.setSmoothness(.3F).orientX(rightCycle * 40F);
+			data.renderLeftItemRotation.setSmoothness(.3F).orientX(leftCycle * 40F);
 		}
 
 		data.head.rotation.setSmoothness(1.0F).orientX(data.headPitch.get())
-		  				  .rotateY(data.headYaw.get());
+				.rotateY(data.headYaw.get());
 
-		if (useDeepPose)
+		if (useStrokePose)
 		{
-			data.head.rotation.rotateX(-80F * t);
+			data.head.rotation.rotateX(-60F * t);
 		}
 
 		// Keep the entity render origin aligned with the hitbox; pose changes stay on limbs.

@@ -3,6 +3,7 @@ package goblinbob.mobends.standard.animation.controller;
 import goblinbob.mobends.core.animation.bit.AnimationBit;
 import goblinbob.mobends.core.animation.controller.IAnimationController;
 import goblinbob.mobends.core.animation.keyframe.ArmatureMask;
+import goblinbob.mobends.core.animation.layer.BlendingAnimationLayer;
 import goblinbob.mobends.core.animation.layer.HardAnimationLayer;
 import goblinbob.mobends.standard.animation.bit.biped.*;
 import goblinbob.mobends.standard.animation.bit.biped.item.*;
@@ -10,7 +11,6 @@ import goblinbob.mobends.standard.animation.bit.player.*;
 import goblinbob.mobends.standard.data.BipedEntityData;
 import goblinbob.mobends.standard.data.PlayerData;
 import net.minecraft.client.player.AbstractClientPlayer;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
@@ -27,7 +27,7 @@ import java.util.List;
  */
 public class PlayerController implements IAnimationController<PlayerData>
 {
-    protected HardAnimationLayer<BipedEntityData<?>> layerBase = new HardAnimationLayer<>();
+    protected BlendingAnimationLayer<BipedEntityData<?>> layerBase = new BlendingAnimationLayer<>();
     protected HardAnimationLayer<BipedEntityData<?>> layerTorch = new HardAnimationLayer<>();
     protected HardAnimationLayer<BipedEntityData<?>> layerSneak = new HardAnimationLayer<>();
     protected HardAnimationLayer<BipedEntityData<?>> layerCape = new HardAnimationLayer<>();
